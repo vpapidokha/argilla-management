@@ -107,11 +107,11 @@ def main():
 
     client = new_argilla_connection(argilla_api_url, argilla_api_key)
 
-    # create_workspaces(client, workspaces_to_create)
-    # create_users(client, users_to_create)
+    create_workspaces(client, workspaces_to_create)
+    create_users(client, users_to_create)
 
-    # delete_workspaces(client, workspaces_to_delete)
-    # delete_users(client, users_to_delete)
+    delete_workspaces(client, workspaces_to_delete)
+    delete_users(client, users_to_delete)
 
 if __name__ == "__main__":
     main()
