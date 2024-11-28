@@ -1,4 +1,4 @@
-#!/Users/user/Documents/Experiments/argilla/bin/python3.12
+#!/Users/user/Documents/Experiments/argilla-management/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

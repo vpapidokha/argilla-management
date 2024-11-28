@@ -1,4 +1,6 @@
 import argilla as rg
+import os
+import json
 
 argilla_api_url = "http://localhost:6900"
 argilla_api_key = "argilla.apikey"
@@ -83,6 +85,82 @@ def delete_users(client, users_to_delete):
 
     print(f"Users list after creation: {users_names}")
 
+def import_dataset_from_disk(client, dataset_name, workspace_name, directory_path):
+    print(f"Importing dataset '{dataset_name}' from '{directory_path}' to workspace '{workspace_name}'...")
+    rg.Dataset.from_disk(
+            path=directory_path,
+            name=dataset_name,
+            workspace=workspace_name,
+            client=client,
+            with_records=True
+    )
+
+    print(f"Dataset '{dataset_name}' imported successfully.")
+
+def export_dataset_to_disk(client, dataset_name, workspace_name, directory_path):
+    create_directory(directory_path)
+    client.datasets(name=dataset_name, workspace=workspace_name).to_disk(directory_path)
+    print(f"Dataset '{dataset_name}' exported to '{directory_path}'.")
+
+def delete_dataset(client, dataset_name, workspace_name):
+    client.datasets(name=dataset_name, workspace=workspace_name).delete()
+    print(f"Dataset '{dataset_name}' is deleted.")
+
+def create_directory(directory_path):
+    try:
+        os.mkdir(directory_path)
+        print(f"Directory '{directory_path}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{directory_path}' already exists.")
+    except PermissionError:
+        print(f"Permission denied: Unable to create '{directory_path}'.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def format_records_from_file(records_file_path):
+    with open(records_file_path, "r") as f:
+        data = json.load(f)
+
+    records = [
+        rg.Record(
+            id = item["id"],
+            fields = item["fields"],
+        )
+        for item in data
+    ]
+    return records
+
+def create_dataset_with_records(client, records, dataset_name, workspace_name):
+    settings = rg.Settings(
+        guidelines="These are some guidelines.",
+        fields=[
+            rg.TextField(
+                name="text",
+            ),
+        ],
+        questions=[
+            rg.LabelQuestion(
+                name="label",
+                labels=["label_1", "label_2", "label_3"]
+            ),
+        ],
+    )
+
+    dataset = rg.Dataset(
+        name=dataset_name,
+        workspace=workspace_name,
+        client=client,
+        settings=settings,
+    )
+
+    dataset.create()
+    dataset.records.log(records)
+    print(f"Records uploaded to dataset " + dataset_name)
+
+def delete_dataset(client, dataset_name, target_workspace_name):
+    client.datasets(name=dataset_name, workspace=target_workspace_name).delete()
+    print(f"Dataset '{dataset_name}' is deleted.")
+
 def main():
     workspaces_to_create = ["my_workspace", "project1", "project2"]
     workspaces_to_delete = workspaces_to_create
@@ -109,6 +187,17 @@ def main():
 
     create_workspaces(client, workspaces_to_create)
     create_users(client, users_to_create)
+
+    dataset_name = "imdb-test"
+    target_workspace_name = "my_workspace"
+    records_file_path = "./imdb_records.json"
+    records = format_records_from_file(records_file_path)
+    create_dataset_with_records(client, records, dataset_name, target_workspace_name)
+    delete_dataset(client, dataset_name, target_workspace_name)
+
+    # export_dataset_to_disk(client, "imdb", "my_workspace", "./imdb")
+    # delete_dataset(client, "imdb", "my_workspace")
+    # import_dataset_from_disk(client, "imdb", "my_workspace", "./imdb")
 
     delete_workspaces(client, workspaces_to_delete)
     delete_users(client, users_to_delete)
